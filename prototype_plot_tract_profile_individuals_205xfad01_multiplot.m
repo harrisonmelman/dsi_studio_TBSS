@@ -29,10 +29,12 @@
 % using tract profiles extracted from INDIVIDUALS (in DMBA/QSDR space)
 % read data from file
 % use nexttile
+% this is used to indicate which report reader function to use. 
+% cli and giu-exported reports have different formatting
+cli_export = 1;
 contrast_list = {'ad', 'qa', 'dti_fa'};
 contrast = 'md';
 in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\20.5xfad.01_AD_BxD77\0.6_region_0_individuals';
-figure; hold on;
 
 ntg_runno_list = {'N59130NLSAM', 'N59132NLSAM', 'N60042NLSAM', 'N60141NLSAM', 'N60155NLSAM', 'N60165NLSAM', 'N60171NLSAM', 'N60206NLSAM', 'N60215NLSAM'};
 tg_runno_list = {'N59128NLSAM', 'N59134NLSAM', 'N60044NLSAM', 'N60047NLSAM', 'N60076NLSAM', 'N60135NLSAM', 'N60143NLSAM', 'N60145NLSAM', 'N60147NLSAM', 'N60149NLSAM', 'N60151NLSAM', 'N60153NLSAM', 'N60208NLSAM', 'N60213NLSAM'};
@@ -43,48 +45,70 @@ color = {'k', 'g', 'b', 'c', 'm', 'r'};
 % loop through and plot all NTG in red
 % then loop through plot all TG in green
 
-% THIS should be a function 'plot one group??'
-% ntg plotting
-color = 'k';
-legend_title = 'ntg';
-grouptag = 'Ntg';
-runnos = ntg_runno_list;
-for i=1:length(runnos)
-    % auto-exported filename ex: N60044NLSAM_tg_qa.report.qa.3.1.txt
-    in_file = strcat(in_dir, '\', runnos{i}, '_', grouptag, '_', contrast, '.report.', contrast, '.3.1.txt');
-    [x, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report_4row(in_file);
-    if i==1
-        % if it is the first one, then populate the legend (all ntg same color, all tg same color, so only need one legend per group)
-        plot_one_profile(x, y, color, legend_title);
-    else
-        plot_one_profile(x, y, color);
-    end
-end
+make_multicontrast_figure(ntg_runno_list, 'ntg', tg_runno_list, 'tg', contrast_list, in_dir, cli_export);
 
-
-
-
-% tg plotting
-color='r';
-legend_title = 'tg';
-grouptag = 'tg';
-runnos = tg_runno_list;
-for i=1:length(runnos)
-    in_file = strcat(in_dir, '\', runnos{i}, '_', grouptag, '_', contrast, '.report.', contrast, '.3.1.txt');
-    [x, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report_4row(in_file);
-    if i==1
-        plot_one_profile(x, y, color, legend_title);
-    else
-        plot_one_profile(x, y, color);
-    end
-end
-
-title(contrast);
-hold off;
 
 %% functions
 
-% this function used for 
+% loop through contrast list
+% newtile and run plot_one_contrast_title for each
+function make_multicontrast_figure(group1, group1_name, group2, group2_name, contrast_list, in_dir, cli_export)
+    figure('name', '20.5xfad.01 ntg (black) vs tg (green)');
+    hold on;
+    for i=1:length(contrast_list)
+        contrast = contrast_list{i};
+        % this needs to be ran before the first tile is plotted
+        nexttile;
+        % and we need another layer of hold on/off for the TILE
+        % the first set at beginning of this function only holds for the
+        % outer figure, this one is for the sub figure
+        hold on;
+        plot_one_contrast_tile(group1, group1_name, group2, group2_name, contrast, in_dir, cli_export);
+        hold off;
+    end
+    hold off;
+end
+
+% creates one figure tile, and plots both groups into it
+function plot_one_contrast_tile(group1, group1_name, group2, group2_name, contrast, in_dir, cli_export)
+    % ntg plotting
+    color = 'k';
+    group_name = 'Ntg';
+    plot_one_group(group1, group1_name, contrast, color, group_name, in_dir, cli_export);
+
+    % tg plotting
+    color='r';
+    % group_name is legend_title
+    group_name = 'tg';
+    plot_one_group(group2, group2_name, contrast, color, group_name, in_dir, cli_export);
+    % set the title for this tile in the figure
+    title(contrast);
+end
+
+
+% plots only one group into one figure tile (one contrast)
+% this is half of one "tile"
+function plot_one_group(runno_list, legend_title, contrast, color, group_name, in_dir, cli_export)
+    for i=1:length(runno_list)
+        runno = runno_list{i};
+        % TODO: take this specific pattern matching OUT of a deep function
+        in_file = strcat(in_dir, '\', runno, '_', group_name, '_', contrast, '.report.', contrast, '.3.1.txt');
+        % TODO: move this check into the extract values function and squash
+        % that into a single function
+        if cli_export
+            [x, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report_4row(in_file);
+        else
+            [x, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report(in_file);
+        end
+        if i==1
+            plot_one_profile(x, y, color, legend_title);
+        else
+            plot_one_profile(x, y, color);
+        end
+    end
+end
+
+% use this function if reports were manually exported fromdsi studio GUI
 function [x, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report(in_file)
     A = readtable(in_file, delimiter='\t');
     % first row is the indices, start at column 2 because 1st is a title
@@ -106,6 +130,7 @@ function [x, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_trac
     %y_CI_max = y_CI_max';
 end
 
+% use this function if reports were exported from the CLI
 function [x, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report_4row(in_file)
     A = readtable(in_file, delimiter='\t');
     % first row is the indices, start at column 2 because 1st is a title
@@ -135,7 +160,14 @@ function plot_one_profile(x, y, color, legend_title)
     end
     value_format = strcat(color, '-');
     if legend_title
-        disp('ADDING A LEGEND');
+        % TODO: this does not work.
+        % want to (only sometimes) add legend key for a plot
+        % if I use the legend() function at the end it goes in order
+        % but I plot all ntg, and then all tg, so I can't properly label
+        % after the fact
+        % and if i use it multiple times, then it overwrites what was on
+        % there previously
+        %disp('ADDING A LEGEND');
         plot(x,y,value_format, 'DisplayName', legend_title);
     else
         plot(x,y,value_format); 
