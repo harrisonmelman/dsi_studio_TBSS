@@ -43,6 +43,7 @@ for i=1:length(runnos)
     [x, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report(in_file);
     %[x, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report_4row(in_file);
     %if i==1
+    %plot(x1,y1,'DisplayName','sin(x/2)')
         plot_one_confidence_interval(x, y_CI_min, y_CI_max, color{i});
     %end
     plot_one_profile(x, y, color{i});
