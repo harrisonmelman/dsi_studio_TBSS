@@ -1,27 +1,28 @@
+
 % exploring the DSI Studio tract profile functionality
 % exported the tract profile data into
     % B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\DMBA_comparative\template_whole_brain_track\threshold_0.6_experiment_0
     % here, tracking was performed on DMBA template.mean.fib.gz
         % whole brain tracking
         % other parameters
-    % then a small tract through X region was selected, This is a very 
+    % then a small tract through X region was selected, This is a very
     % strong WM bundle
-        % this was exported and loaded in to all 5 template fib files 
+        % this was exported and loaded in to all 5 template fib files
         % N58211, N58646, N58656, N58981, N59007
         % and the tract profile was saved along this fiber bundle for each
 % in DSI Studio, the only visualization provided is a simple plot, one
-% specimen at a time. 
+% specimen at a time.
 % here, I seek to improve that by plotting the tract profile for each
 % individual and the template in the same plot.
 % I can also include confidence intervals
 
 % understanding the tract profile output file:
-% tab separated value txt file 
+% tab separated value txt file
 % first column for both rowss is "headers", just the name of the track file
 % profile was pulled from
 % first row is index, 0...99
-% second row is [values 0...99] "CI" [confidence interval lower bounds 
-% 0...99] "CI" [confidence interval upper bounds 0...99] 
+% second row is [values 0...99] "CI" [confidence interval lower bounds
+% 0...99] "CI" [confidence interval upper bounds 0...99]
 % unsure if the bundle is always broken up into 100 bands, or if it depends
 % on length
 
@@ -29,12 +30,18 @@
 % using tract profiles extracted from INDIVIDUALS (in DMBA/QSDR space)
 % read data from file
 % use nexttile
-% this is used to indicate which report reader function to use. 
+% this is used to indicate which report reader function to use.
 % cli and giu-exported reports have different formatting
 cli_export = 1;
-contrast_list = {'ad', 'qa', 'dti_fa'};
-contrast = 'md';
-in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\20.5xfad.01_AD_BxD77\0.6_region_0_individuals';
+%contrast_list = {'ad', 'qa', 'dti_fa'};
+contrast_list = {'iso', 'qa', 'ad', 'dti_fa'};
+%contrast = 'md';
+%in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\20.5xfad.01_AD_BxD77\0.6_region_0_individuals';
+%in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\20.5xfad.01_AD_BxD77\ntgAVG_track_cerebellum_test_0';
+
+% first region from Len inspired experiment
+% 166_fr 168_cst/bundle2 156_cc
+in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\five_regions_from_len\168_cst\bundle1';
 
 ntg_runno_list = {'N59130NLSAM', 'N59132NLSAM', 'N60042NLSAM', 'N60141NLSAM', 'N60155NLSAM', 'N60165NLSAM', 'N60171NLSAM', 'N60206NLSAM', 'N60215NLSAM'};
 tg_runno_list = {'N59128NLSAM', 'N59134NLSAM', 'N60044NLSAM', 'N60047NLSAM', 'N60076NLSAM', 'N60135NLSAM', 'N60143NLSAM', 'N60145NLSAM', 'N60147NLSAM', 'N60149NLSAM', 'N60151NLSAM', 'N60153NLSAM', 'N60208NLSAM', 'N60213NLSAM'};
@@ -93,6 +100,7 @@ function plot_one_group(runno_list, legend_title, contrast, color, group_name, i
         runno = runno_list{i};
         % TODO: take this specific pattern matching OUT of a deep function
         in_file = strcat(in_dir, '\', runno, '_', group_name, '_', contrast, '.report.', contrast, '.3.1.txt');
+        %in_file = strcat(in_dir, '\', runno, '.report.', contrast, '.3.1.txt');
         % TODO: move this check into the extract values function and squash
         % that into a single function
         if cli_export
@@ -170,7 +178,7 @@ function plot_one_profile(x, y, color, legend_title)
         %disp('ADDING A LEGEND');
         plot(x,y,value_format, 'DisplayName', legend_title);
     else
-        plot(x,y,value_format); 
+        plot(x,y,value_format);
     end
 end
 
