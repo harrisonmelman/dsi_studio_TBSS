@@ -36,19 +36,21 @@
 # dsi_studio --action=ana --source=*.gqi.1.25.fib.gz --export=qa,iso,dti_fa,rd,ad
 
 #dsi_studio="K:/CIVM_Apps/dsi_studio_64/dsi_studio_win_v2023-03-28/dsi_studio.exe";
-dsi_studio="//pwp-civm-ctx01/K/CIVM_Apps/dsi_studio_64/dsi_studio_win_v2023-03-28/dsi_studio.exe";
+#dsi_studio="//pwp-civm-ctx01/K/CIVM_Apps/dsi_studio_64/dsi_studio_win_v2023-03-28/dsi_studio.exe";
+dsi_studio="K:/CIVM_Apps/dsi_studio_64/dsi_studio_win_v2024-04-11/dsi_studio.exe";
 
 # load fib data
 # export tract profile of QA metric, with sampling style 3="along tracts", and with bandwidth=1
 #fib_file="B:/22.gaj.49/DMBA/Aligned-Data-RAS/Other/QSDR_fib/N58211NLSAM/nii4D_N58211NLSAM.odf.15um_mdt.qsdr.0.6.R96.fib.gz";
-tract_file="B:/ProjectSpace/hmm56/prototype_dsi_studio_TBSS/20.5xfad.01_AD_BxD77/whole_brain_0.6_test_region_0.tt.gz";
-contrast_list="dti_fa ad"
+out_dir="B:/ProjectSpace/hmm56/prototype_dsi_studio_TBSS/five_regions_from_len/166_fr";
+tract_file="${out_dir}/fr__fasciculus_retroflexus_left_0.4.tt.gz";
+
 bandwidth=1;
 sample_strategy=3;
 
 strain_list="all_Ntg all_tg";
 
-
+contrast_list="dti_fa ad md rd qa iso"
 for strain in $strain_list; do
     input_dir="B:/20.5xfad.01/QSDR/BXD77/average_volumes/${strain}";
     for fib_file in $(ls ${input_dir}/nii4d*fib.gz); do
@@ -58,18 +60,71 @@ for strain in $strain_list; do
         runno=${runno%%.src*};
         runno=${runno##nii4d_};
         for contrast in $contrast_list; do
-            out_prefix="B:/ProjectSpace/hmm56/prototype_dsi_studio_TBSS/20.5xfad.01_AD_BxD77/threshold_0.6_experiment_0_individuals/${runno}_${strain##all_}_${contrast}";
+            out_prefix="${out_dir}/${runno}_${strain##all_}_${contrast}";
             ${dsi_studio} --action=ana --source=${fib_file} --tract=${tract_file} --export=report:${contrast}:${sample_strategy}:${bandwidth} --output=${out_prefix};
             #exit 1;
         done
     done
 done
 
+
+out_dir="B:/ProjectSpace/hmm56/prototype_dsi_studio_TBSS/five_regions_from_len/168_cst/bundle1";
+tract_file="${out_dir}/cst__corticospinal_tract_left_0.7_bundle1.tt.gz";
+
+bandwidth=1;
+sample_strategy=3;
+
+strain_list="all_Ntg all_tg";
+
+contrast_list="dti_fa ad md rd qa iso"
+for strain in $strain_list; do
+    input_dir="B:/20.5xfad.01/QSDR/BXD77/average_volumes/${strain}";
+    for fib_file in $(ls ${input_dir}/nii4d*fib.gz); do
+        fib_file=${fib_file%%@};
+        fib_file=$(readlink $fib_file);
+        runno=$(basename ${fib_file});
+        runno=${runno%%.src*};
+        runno=${runno##nii4d_};
+        for contrast in $contrast_list; do
+            out_prefix="${out_dir}/${runno}_${strain##all_}_${contrast}";
+            ${dsi_studio} --action=ana --source=${fib_file} --tract=${tract_file} --export=report:${contrast}:${sample_strategy}:${bandwidth} --output=${out_prefix};
+            #exit 1;
+        done
+    done
+done
+
+
+out_dir="B:/ProjectSpace/hmm56/prototype_dsi_studio_TBSS/five_regions_from_len/168_cst/bundle2";
+tract_file="${out_dir}/cst__corticospinal_tract_left_0.7_bundle2.tt.gz";
+
+bandwidth=1;
+sample_strategy=3;
+
+strain_list="all_Ntg all_tg";
+
+contrast_list="dti_fa ad md rd qa iso"
+for strain in $strain_list; do
+    input_dir="B:/20.5xfad.01/QSDR/BXD77/average_volumes/${strain}";
+    for fib_file in $(ls ${input_dir}/nii4d*fib.gz); do
+        fib_file=${fib_file%%@};
+        fib_file=$(readlink $fib_file);
+        runno=$(basename ${fib_file});
+        runno=${runno%%.src*};
+        runno=${runno##nii4d_};
+        for contrast in $contrast_list; do
+            out_prefix="${out_dir}/${runno}_${strain##all_}_${contrast}";
+            ${dsi_studio} --action=ana --source=${fib_file} --tract=${tract_file} --export=report:${contrast}:${sample_strategy}:${bandwidth} --output=${out_prefix};
+            #exit 1;
+        done
+    done
+done
+
+
 exit 1;
 # old code
 for x in N58211 N58646 N58656 N58981 N59007; do
     fib_file="B:/22.gaj.49/DMBA/Aligned-Data-RAS/Other/QSDR_fib/${x}NLSAM/nii4D_${x}*fib.gz";
-    out_prefix="B:/ProjectSpace/hmm56/prototype_dsi_studio_TBSS/20.5xfad.01_AD_BxD77/0.6_region_0_individuals/${x}";
+    out_prefix="B:/ProjectSpace/hmm56/prototype_dsi_studio_TBSS/20.5xfad.01_AD_BxD77/threshold_0.6_experiment_0/${x}";
     ${dsi_studio} --action=ana --source=${fib_file} --tract=${tract_file} --export=report:${contrast}:${sample_strategy}:${bandwidth} --output=${out_prefix};
 done
 
