@@ -34,7 +34,8 @@
 % cli and giu-exported reports have different formatting
 cli_export = 1;
 %contrast_list = {'ad', 'qa', 'dti_fa'};
-contrast_list = {'iso', 'qa', 'ad', 'dti_fa'};
+%contrast_list = {'iso', 'qa', 'ad', 'dti_fa'};
+contrast_list = {'ad', 'fa'};
 %contrast = 'md';
 %in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\20.5xfad.01_AD_BxD77\0.6_region_0_individuals';
 %in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\20.5xfad.01_AD_BxD77\ntgAVG_track_cerebellum_test_0';
@@ -52,10 +53,65 @@ color = {'k', 'g', 'b', 'c', 'm', 'r'};
 % loop through and plot all NTG in red
 % then loop through plot all TG in green
 
-make_multicontrast_figure(ntg_runno_list, 'ntg', tg_runno_list, 'tg', contrast_list, in_dir, cli_export);
-
+full_runno_list = [ntg_runno_list, tg_runno_list];
+[column_names, data_csv] = make_multicontrast_csv(ntg_runno_list, 'Ntg_all', tg_runno_list, 'tg_all', contrast_list, in_dir, cli_export);
+%make_multicontrast_figure(group1, group1_name, group2, group2_name, contrast_list, in_dir, cli_export)
 
 %% functions
+
+% loop through contrast list
+% load data and create a master csv file with all runnos and all contrasts
+% TBSS in dsi studio always gives us 100 timepoints/pseudovoxels
+% each row is a pseudovoxel
+% will contain columns for: $runno_$contrast_val,
+% $runno_$contrast_CI_lower,
+% $runno_$contrast_CI_upper, 
+% group information (gene_status, age, sex, strain, etc)
+function [column_names, data_csv] = make_multicontrast_csv(group1, group1_name, group2, group2_name, contrast_list, in_dir, cli_export)
+    % estimate csv size for preallocation
+    % 100 data points, plus columns for gene_status, runno, contrast
+    % add more columns later for more refined groupings
+    num_cols = 104;
+    % TIMES 3 if you include the confidence intervals. keep off for test
+    num_rows = 1 * (length(group1) + length(group2)) * length(contrast_list);
+    %data_csv = zeros(num_rows,num_cols);
+    data_csv = [];
+    row_names = {};
+    column_names = {'name', 'runno', 'contrast', 'group'};
+    % TODO: fix this so that you don't copy and paste the for loop twice
+    % for 2 groups...
+    for i=1:length(contrast_list)
+        contrast = contrast_list{i};
+        % TODO: inner for loop is almost a copy of plot_one_group
+        % sub functions are too cascadey and custom-use
+        group_name = group1_name;
+        runno_list = group1;
+        for j=1:length(runno_list)
+            runno = runno_list{j};
+            % TODO: make finding input files a function in itself
+            % AND AND be more consistnet with naming tract profile files
+            %in_file = strcat(in_dir, '\', runno, '_', group_name, '_', contrast, '.report.', contrast, '.3.1.txt');
+            in_file = strcat(in_dir, '\', runno, '.report.', contrast, '.3.1.txt');
+            [~, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report_4row(in_file);
+            % for testing, just the simple values
+            %new_columns = {strcat(runno,'_',contrast,'_val'), strcat(runno,'_',contrast,'_CI_lower'), strcat(runno,'_',contrast,'_CI_upper')};
+            new_rows = {strcat(runno,'_',contrast,'_val')};
+            row_names = [row_names, new_rows];
+            data_csv = [data_csv; y];
+        end
+
+        group_name = group2_name;
+        runno_list = group2;
+        for j=1:length(runno_list)
+            runno = runno_list{j};
+            in_file = strcat(in_dir, '\', runno, '.report.', contrast, '.3.1.txt');
+            [x, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report_4row(in_file);
+            new_rows = {strcat(runno,'_',contrast,'_val')};
+            row_names = [row_names, new_rows];
+            data_csv = [data_csv; y];
+        end
+    end
+end
 
 % loop through contrast list
 % newtile and run plot_one_contrast_title for each
