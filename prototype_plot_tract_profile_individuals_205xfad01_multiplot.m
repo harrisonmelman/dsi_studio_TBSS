@@ -35,17 +35,24 @@
 cli_export = 1;
 %contrast_list = {'ad', 'qa', 'dti_fa'};
 %contrast_list = {'iso', 'qa', 'ad', 'dti_fa'};
-contrast_list = {'ad', 'fa'};
+%contrast_list = {'ad', 'fa'};
+contrast_list = {'ad', 'dti_fa', 'iso', 'md', 'qa', 'rd'};
 %contrast = 'md';
 %in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\20.5xfad.01_AD_BxD77\0.6_region_0_individuals';
 %in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\20.5xfad.01_AD_BxD77\ntgAVG_track_cerebellum_test_0';
 
 % first region from Len inspired experiment
 % 166_fr 168_cst/bundle2 156_cc
-in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\five_regions_from_len\168_cst\bundle1';
+experiment = '166_fr';
+%in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\five_regions_from_len\168_cst\bundle1';
+in_dir = strcat('B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\five_regions_from_len\', experiment);
+out_file = strcat('B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\prototype_matlab_csv_export_', experiment, '.txt');
+%in_dir = strcat('B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\native_space_vs_QSDR_space\QSDR_space');
+%out_file = strcat('B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\native_space_vs_QSDR_space\QSDR_QSDR_', experiment, '.txt');
 
 ntg_runno_list = {'N59130NLSAM', 'N59132NLSAM', 'N60042NLSAM', 'N60141NLSAM', 'N60155NLSAM', 'N60165NLSAM', 'N60171NLSAM', 'N60206NLSAM', 'N60215NLSAM'};
 tg_runno_list = {'N59128NLSAM', 'N59134NLSAM', 'N60044NLSAM', 'N60047NLSAM', 'N60076NLSAM', 'N60135NLSAM', 'N60143NLSAM', 'N60145NLSAM', 'N60147NLSAM', 'N60149NLSAM', 'N60151NLSAM', 'N60153NLSAM', 'N60208NLSAM', 'N60213NLSAM'};
+
 runnos = {'all_ntg', 'all_tg'};
 color = {'k', 'g', 'b', 'c', 'm', 'r'};
 %color = {'k', 'r', 'r', 'r', 'r', 'r'};
@@ -54,7 +61,6 @@ color = {'k', 'g', 'b', 'c', 'm', 'r'};
 % then loop through plot all TG in green
 
 full_runno_list = [ntg_runno_list, tg_runno_list];
-out_file = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\prototype_matlab_csv_export.txt';
 [column_names, data_csv] = make_multicontrast_csv(out_file, ntg_runno_list, 'Ntg_all', tg_runno_list, 'tg_all', contrast_list, in_dir, cli_export);
 
 %make_multicontrast_figure(group1, group1_name, group2, group2_name, contrast_list, in_dir, cli_export)
@@ -83,6 +89,7 @@ function [column_names, data_csv] = make_multicontrast_csv(out_file, group1, gro
     column_names = {'name', 'runno', 'contrast', 'group'};
     % TODO: fix this so that you don't copy and paste the for loop twice
     % for 2 groups...
+    custom_name = 'QSDR_QSDR';
     for i=1:length(contrast_list)
         contrast = contrast_list{i};
         % TODO: inner for loop is almost a copy of plot_one_group
@@ -98,6 +105,7 @@ function [column_names, data_csv] = make_multicontrast_csv(out_file, group1, gro
             [~, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report_4row(in_file);
             y = num2cell(y);
             y = [in_file, runno, contrast, group_name, y];
+            %y = [in_file, runno, contrast, group_name, custom_name, y];
             % for testing, just the simple values
             %new_columns = {strcat(runno,'_',contrast,'_val'), strcat(runno,'_',contrast,'_CI_lower'), strcat(runno,'_',contrast,'_CI_upper')};
             new_rows = {strcat(runno,'_',contrast,'_val')};
@@ -113,6 +121,7 @@ function [column_names, data_csv] = make_multicontrast_csv(out_file, group1, gro
             [x, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report_4row(in_file);
             y = num2cell(y);
             y = [in_file, runno, contrast, group_name, y];
+            %y = [in_file, runno, contrast, group_name, custom_name, y];
             new_rows = {strcat(runno,'_',contrast,'_val')};
             row_names = [row_names, new_rows];
             data_csv = [data_csv; y];

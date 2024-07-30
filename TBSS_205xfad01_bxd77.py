@@ -5,15 +5,17 @@ import glob
 contrast_list = ["fa", "ad"]
 metric_type = 3
 bandwidth = 1
-
+"""
 experiment_list = ["ntgAVG_track_cerebellum_test_0",
                    "ntgAVG_track_cerebellum_test_1",
                    "ntgAVG_track_cerebellum_test_2",
                    "ntgAVG_track_brainstem_test"]
-
+"""
+experiment_list = ["156_cc", "166_fr", "168_cst/bundle1", "168_cs5/bundle2"]
 #group_list = ["Ntg", "tg"]
 
-out_dir_base = "B:/ProjectSpace/hmm56/prototype_dsi_studio_TBSS/20.5xfad.01_AD_BxD77"
+#out_dir_base = "B:/ProjectSpace/hmm56/prototype_dsi_studio_TBSS/20.5xfad.01_AD_BxD77"
+out_dir_base = "B:/ProjectSpace/hmm56/prototype_dsi_studio_TBSS/five_regions_from_len"
 
 for experiment in experiment_list:
     out_dir = "{}/{}".format(out_dir_base, experiment)
