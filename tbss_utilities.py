@@ -6,6 +6,8 @@ import glob
 import os
 DSI_STUDIO = "K:/CIVM_Apps/dsi_studio_64/dsi_studio_win_v2024-04-11/dsi_studio.exe"
 
+#def file_mod_extreme
+
 
 def export_tract_profiles(fib_file, tract_file, out_dir, contrast_list=None, metric_type=3, bandwidth=1):
     """Export the tract profile data to a .txt file.
@@ -24,6 +26,13 @@ def export_tract_profiles(fib_file, tract_file, out_dir, contrast_list=None, met
     # out_prefix="B:/ProjectSpace/hmm56/prototype_dsi_studio_TBSS/20.5xfad.01_AD_BxD77/0.6_region_0_individuals/${runno}_${strain##all_}_${contrast}";
     runno = get_runno_from_fib_file(fib_file)
     out_prefix = "{}/{}".format(out_dir, runno)
+
+    # add the group name if runno is template to differentiate between different group averages
+    if "template" in runno:
+        out_prefix = "{}/{}_{}".format(out_dir, runno, group_name)
+
+    # check if out_prefix[.*] is newer than the tract_file. If the reports are newer than the tract_file, then work is already done, and do not re-do
+    # this is the same idea as perl file_mod_extreme
     cmd = "{} --action=ana --source={} --tract={} {} --output={}".format(DSI_STUDIO, fib_file, tract_file, export_string, out_prefix)
     print(cmd)
     subprocess.run(cmd)
@@ -33,6 +42,7 @@ def setup_export_argument(contrast_list, metric_type, bandwidth):
     #  --export=report:ad:3:1,report:qa:3:1
     s = ""
     for contrast in contrast_list:
+        # look up what a "zip" function does. it does this.
         s = "{}report:{}:{}:{},".format(s, contrast, metric_type, bandwidth)
     # remove the final trailing comma
     s = s[:-1]
@@ -47,19 +57,16 @@ def whole_folder_export(dirname, tract_file, out_dir, contrast_list, metric_type
         if fib_file.endswith("@"):
             # sometimes when we have a symlink, the ls command will att an @ to the end of it. clear it.
             fib_file = fib_file[:-1]
-        try:
-            # this throws an exception if fib_file is not a link (if it is a real file)
-            fib_file = os.readlink(fib_file)
-        except OSError:
-            continue
+            try:
+                # this throws an exception if fib_file is not a link (if it is a real file)
+                fib_file = os.readlink(fib_file)
+            except OSError:
+                continue
         fib_file = fib_file.replace("\\", "/")
         export_tract_profiles(fib_file, tract_file, out_dir, contrast_list, metric_type, bandwidth)
 
 
 def get_runno_from_fib_file(fib_file):
-    """this likely only works for nii4d_${runno}.blahblahblah_blah
-    but this SHOULD also work for the QSDR template, giving us 'template'
-    """
     fib_file = os.path.basename(fib_file)
     runno = fib_file.split(".")
     runno = runno[0]
