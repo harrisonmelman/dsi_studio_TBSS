@@ -4,7 +4,8 @@
 import subprocess
 import glob
 import os
-DSI_STUDIO = "K:/CIVM_Apps/dsi_studio_64/dsi_studio_win_v2024-04-11/dsi_studio.exe"
+#DSI_STUDIO = "K:/CIVM_Apps/dsi_studio_64/dsi_studio_win_v2024-04-11/dsi_studio.exe"
+DSI_STUDIO = "//pwp-civm-ctx01/k/CIVM_Apps/dsi_studio_64/dsi_studio_win_v2024-04-11/dsi_studio.exe"
 
 #def file_mod_extreme
 
