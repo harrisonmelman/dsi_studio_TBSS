@@ -34,18 +34,25 @@
 % cli and giu-exported reports have different formatting
 cli_export = 1;
 %contrast_list = {'ad', 'qa', 'dti_fa'};
-contrast_list = {'iso', 'qa', 'ad', 'md', 'rd', 'dti_fa'};
+%contrast_list = {'iso', 'qa', 'ad', 'dti_fa'};
+%contrast_list = {'ad', 'fa'};
+contrast_list = {'ad', 'dti_fa', 'iso', 'md', 'qa', 'rd'};
 %contrast = 'md';
 %in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\20.5xfad.01_AD_BxD77\0.6_region_0_individuals';
 %in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\20.5xfad.01_AD_BxD77\ntgAVG_track_cerebellum_test_0';
 
 % first region from Len inspired experiment
 % 166_fr 168_cst/bundle2 156_cc
-in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\five_regions_from_len\166_fr';
-in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\native_space_vs_QSDR_space\native_space';
+experiment = '166_fr';
+%in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\five_regions_from_len\168_cst\bundle1';
+in_dir = strcat('B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\five_regions_from_len\', experiment);
+out_file = strcat('B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\prototype_matlab_csv_export_', experiment, '.txt');
+%in_dir = strcat('B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\native_space_vs_QSDR_space\QSDR_space');
+%out_file = strcat('B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\native_space_vs_QSDR_space\QSDR_QSDR_', experiment, '.txt');
 
 ntg_runno_list = {'N59130NLSAM', 'N59132NLSAM', 'N60042NLSAM', 'N60141NLSAM', 'N60155NLSAM', 'N60165NLSAM', 'N60171NLSAM', 'N60206NLSAM', 'N60215NLSAM'};
 tg_runno_list = {'N59128NLSAM', 'N59134NLSAM', 'N60044NLSAM', 'N60047NLSAM', 'N60076NLSAM', 'N60135NLSAM', 'N60143NLSAM', 'N60145NLSAM', 'N60147NLSAM', 'N60149NLSAM', 'N60151NLSAM', 'N60153NLSAM', 'N60208NLSAM', 'N60213NLSAM'};
+
 runnos = {'all_ntg', 'all_tg'};
 color = {'k', 'g', 'b', 'c', 'm', 'r'};
 %color = {'k', 'r', 'r', 'r', 'r', 'r'};
@@ -53,10 +60,77 @@ color = {'k', 'g', 'b', 'c', 'm', 'r'};
 % loop through and plot all NTG in red
 % then loop through plot all TG in green
 
-make_multicontrast_figure(ntg_runno_list, 'ntg', tg_runno_list, 'tg', contrast_list, in_dir, cli_export);
+full_runno_list = [ntg_runno_list, tg_runno_list];
+[column_names, data_csv] = make_multicontrast_csv(out_file, ntg_runno_list, 'Ntg_all', tg_runno_list, 'tg_all', contrast_list, in_dir, cli_export);
 
+%make_multicontrast_figure(group1, group1_name, group2, group2_name, contrast_list, in_dir, cli_export)
 
 %% functions
+
+% loop through contrast list
+% load data and create a master csv file with all runnos and all contrasts
+% TBSS in dsi studio always gives us 100 timepoints/pseudovoxels
+% each row is a pseudovoxel
+% will contain columns for: $runno_$contrast_val,
+% $runno_$contrast_CI_lower,
+% $runno_$contrast_CI_upper, 
+% group information (gene_status, age, sex, strain, etc)
+function [column_names, data_csv] = make_multicontrast_csv(out_file, group1, group1_name, group2, group2_name, contrast_list, in_dir, cli_export)
+    % estimate csv size for preallocation
+    % 100 data points, plus columns for gene_status, runno, contrast
+    % add more columns later for more refined groupings
+    num_cols = 104;
+    % TIMES 3 if you include the confidence intervals. keep off for test
+    num_rows = 1 * (length(group1) + length(group2)) * length(contrast_list);
+    %data_csv = zeros(num_rows,num_cols);
+    % use a cell array to put both numerical and categorical data in
+    data_csv = {};
+    row_names = {};
+    column_names = {'name', 'runno', 'contrast', 'group'};
+    % TODO: fix this so that you don't copy and paste the for loop twice
+    % for 2 groups...
+    custom_name = 'QSDR_QSDR';
+    for i=1:length(contrast_list)
+        contrast = contrast_list{i};
+        % TODO: inner for loop is almost a copy of plot_one_group
+        % sub functions are too cascadey and custom-use
+        group_name = group1_name;
+        runno_list = group1;
+        for j=1:length(runno_list)
+            runno = runno_list{j};
+            % TODO: make finding input files a function in itself
+            % AND AND be more consistnet with naming tract profile files
+            %in_file = strcat(in_dir, '\', runno, '_', group_name, '_', contrast, '.report.', contrast, '.3.1.txt');
+            in_file = strcat(in_dir, '\', runno, '.report.', contrast, '.3.1.txt');
+            [~, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report_4row(in_file);
+            y = num2cell(y);
+            y = [in_file, runno, contrast, group_name, y];
+            %y = [in_file, runno, contrast, group_name, custom_name, y];
+            % for testing, just the simple values
+            %new_columns = {strcat(runno,'_',contrast,'_val'), strcat(runno,'_',contrast,'_CI_lower'), strcat(runno,'_',contrast,'_CI_upper')};
+            new_rows = {strcat(runno,'_',contrast,'_val')};
+            row_names = [row_names, new_rows];
+            data_csv = [data_csv; y];
+        end
+
+        group_name = group2_name;
+        runno_list = group2;
+        for j=1:length(runno_list)
+            runno = runno_list{j};
+            in_file = strcat(in_dir, '\', runno, '.report.', contrast, '.3.1.txt');
+            [x, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report_4row(in_file);
+            y = num2cell(y);
+            y = [in_file, runno, contrast, group_name, y];
+            %y = [in_file, runno, contrast, group_name, custom_name, y];
+            new_rows = {strcat(runno,'_',contrast,'_val')};
+            row_names = [row_names, new_rows];
+            data_csv = [data_csv; y];
+        end
+    end
+
+    % write cell array to file
+    writecell(data_csv, out_file, 'Delimiter','tab');
+end
 
 % loop through contrast list
 % newtile and run plot_one_contrast_title for each
@@ -100,8 +174,8 @@ function plot_one_group(runno_list, legend_title, contrast, color, group_name, i
     for i=1:length(runno_list)
         runno = runno_list{i};
         % TODO: take this specific pattern matching OUT of a deep function
-        %in_file = strcat(in_dir, '\', runno, '_', group_name, '_', contrast, '.report.', contrast, '.3.1.txt');
-        in_file = strcat(in_dir, '\', runno, '.report.', contrast, '.3.1.txt');
+        in_file = strcat(in_dir, '\', runno, '_', group_name, '_', contrast, '.report.', contrast, '.3.1.txt');
+        %in_file = strcat(in_dir, '\', runno, '.report.', contrast, '.3.1.txt');
         % TODO: move this check into the extract values function and squash
         % that into a single function
         if cli_export
