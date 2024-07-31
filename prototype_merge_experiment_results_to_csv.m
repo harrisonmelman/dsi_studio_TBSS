@@ -33,38 +33,59 @@
 % this is used to indicate which report reader function to use.
 % cli and giu-exported reports have different formatting
 cli_export = 1;
-%contrast_list = {'ad', 'qa', 'dti_fa'};
-%contrast_list = {'iso', 'qa', 'ad', 'dti_fa'};
-%contrast_list = {'ad', 'fa'};
-contrast_list = {'ad', 'dti_fa', 'iso', 'md', 'qa', 'rd'};
-%contrast = 'md';
-%in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\20.5xfad.01_AD_BxD77\0.6_region_0_individuals';
-%in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\20.5xfad.01_AD_BxD77\ntgAVG_track_cerebellum_test_0';
-
-% first region from Len inspired experiment
-% 166_fr 168_cst/bundle2 156_cc
-experiment = '166_fr';
-%in_dir = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\five_regions_from_len\168_cst\bundle1';
-in_dir = strcat('B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\five_regions_from_len\', experiment);
-out_file = strcat('B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\prototype_matlab_csv_export_', experiment, '.txt');
-%in_dir = strcat('B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\native_space_vs_QSDR_space\QSDR_space');
-%out_file = strcat('B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\native_space_vs_QSDR_space\QSDR_QSDR_', experiment, '.txt');
-
+contrast_list = {'ad', 'fa', 'iso', 'md', 'qa', 'rd'};
+contrast_list = {'ad', 'fa'};
+project_code = '20.5xfad.01';
+identifier = 'BXD77';
 ntg_runno_list = {'N59130NLSAM', 'N59132NLSAM', 'N60042NLSAM', 'N60141NLSAM', 'N60155NLSAM', 'N60165NLSAM', 'N60171NLSAM', 'N60206NLSAM', 'N60215NLSAM'};
 tg_runno_list = {'N59128NLSAM', 'N59134NLSAM', 'N60044NLSAM', 'N60047NLSAM', 'N60076NLSAM', 'N60135NLSAM', 'N60143NLSAM', 'N60145NLSAM', 'N60147NLSAM', 'N60149NLSAM', 'N60151NLSAM', 'N60153NLSAM', 'N60208NLSAM', 'N60213NLSAM'};
 
-runnos = {'all_ntg', 'all_tg'};
-color = {'k', 'g', 'b', 'c', 'm', 'r'};
-%color = {'k', 'r', 'r', 'r', 'r', 'r'};
+in_dir_base = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\BADEA_vulnerable_networks_in_models_of_ad_risk';
+out_dir_base = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS';
 
-% loop through and plot all NTG in red
-% then loop through plot all TG in green
-
-full_runno_list = [ntg_runno_list, tg_runno_list];
-[column_names, data_csv] = make_multicontrast_csv(out_file, ntg_runno_list, 'Ntg_all', tg_runno_list, 'tg_all', contrast_list, in_dir, cli_export);
-
-%make_multicontrast_figure(group1, group1_name, group2, group2_name, contrast_list, in_dir, cli_export)
-
+% TODO: smart organization of this (or of my data)
+% currently, I have 3 "levels" of organization
+    % OUTER -- this set of experiments is focused on a broader question.
+        % Like "badea papers" or "five_regions_from_len" or "QSDR_vs_native"
+    % experiment -- Specifies what RCCF ROIs and QA threshold used for
+        % tracking
+    % bundles -- If it makes sense, subdivide the tractography generated
+        % from the ROI into distinct bundles to analyze separately. This makes
+        % sense if there are multiple branching bundles going through the ROI
+%% EXAMPLE for when you do not have any sub-bundles
+% experiment_list = {'hippo_right_cortex_left'};
+% experiment = 'hippo_right_cortex_left';
+% for i=1:length(experiment_list)
+%     experiment = experiment_list{i};
+%     in_dir = strcat('B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\BADEA_vulnerable_networks_in_models_of_ad_risk\', experiment);
+%     out_file = strcat('B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\prototype_matlab_csv_export_', experiment, '.txt');
+%     [column_names, data_csv] = make_multicontrast_csv(out_file, ntg_runno_list, 'Ntg_all', tg_runno_list, 'tg_all', contrast_list, in_dir, cli_export);
+% end
+%% EXAMPLE with sub-bundles
+experiment_list = {'hippo_right_cortex_left', '159_optc_0.5'};
+experiment = 'hippo_right_cortex_left';
+for i=1:length(experiment_list)
+    experiment = experiment_list{i};
+    in_dir_exp = strcat(in_dir_base, '\', experiment);
+    % returns a struct
+    bundle_list = dir(strcat(in_dir_exp, '\', 'bundle*'));
+    % TODO: only run this for loop IF we have at least one bundle
+    % if no bundle folders detected, then fall back to the previous method
+    if length(bundle_list) > 0
+        for j=1:length(bundle_list)
+            bundle = bundle_list(j).name;
+            in_dir = strcat(in_dir_exp, '\', bundle);
+            % ex 20.5xfad.01_BXD77_172_scp_0.5_bundle1_TBSS_export.txt
+            out_file = strcat(out_dir_base, '\', project_code, '_', identifier, '_', experiment, '_', bundle, '_TBSS_export.txt');
+            [column_names, data_csv] = make_multicontrast_csv(out_file, ntg_runno_list, 'Ntg_all', tg_runno_list, 'tg_all', contrast_list, in_dir, cli_export);
+        end
+    else
+        in_dir = in_dir_exp;
+        out_file = strcat(out_dir_base, '\', project_code, '_', identifier, '_', experiment, '_TBSS_export.txt');
+        [column_names, data_csv] = make_multicontrast_csv(out_file, ntg_runno_list, 'Ntg_all', tg_runno_list, 'tg_all', contrast_list, in_dir, cli_export);
+        
+    end
+end
 %% functions
 
 % loop through contrast list
@@ -82,7 +103,6 @@ function [column_names, data_csv] = make_multicontrast_csv(out_file, group1, gro
     num_cols = 104;
     % TIMES 3 if you include the confidence intervals. keep off for test
     num_rows = 1 * (length(group1) + length(group2)) * length(contrast_list);
-    %data_csv = zeros(num_rows,num_cols);
     % use a cell array to put both numerical and categorical data in
     data_csv = {};
     row_names = {};
@@ -92,8 +112,6 @@ function [column_names, data_csv] = make_multicontrast_csv(out_file, group1, gro
     custom_name = 'QSDR_QSDR';
     for i=1:length(contrast_list)
         contrast = contrast_list{i};
-        % TODO: inner for loop is almost a copy of plot_one_group
-        % sub functions are too cascadey and custom-use
         group_name = group1_name;
         runno_list = group1;
         for j=1:length(runno_list)
@@ -130,65 +148,6 @@ function [column_names, data_csv] = make_multicontrast_csv(out_file, group1, gro
 
     % write cell array to file
     writecell(data_csv, out_file, 'Delimiter','tab');
-end
-
-% loop through contrast list
-% newtile and run plot_one_contrast_title for each
-function make_multicontrast_figure(group1, group1_name, group2, group2_name, contrast_list, in_dir, cli_export)
-    figure('name', '20.5xfad.01 ntg (black) vs tg (green)');
-    hold on;
-    for i=1:length(contrast_list)
-        contrast = contrast_list{i};
-        % this needs to be ran before the first tile is plotted
-        nexttile;
-        % and we need another layer of hold on/off for the TILE
-        % the first set at beginning of this function only holds for the
-        % outer figure, this one is for the sub figure
-        hold on;
-        plot_one_contrast_tile(group1, group1_name, group2, group2_name, contrast, in_dir, cli_export);
-        hold off;
-    end
-    hold off;
-end
-
-% creates one figure tile, and plots both groups into it
-function plot_one_contrast_tile(group1, group1_name, group2, group2_name, contrast, in_dir, cli_export)
-    % ntg plotting
-    color = 'k';
-    group_name = 'Ntg';
-    plot_one_group(group1, group1_name, contrast, color, group_name, in_dir, cli_export);
-
-    % tg plotting
-    color='r';
-    % group_name is legend_title
-    group_name = 'tg';
-    plot_one_group(group2, group2_name, contrast, color, group_name, in_dir, cli_export);
-    % set the title for this tile in the figure
-    title(contrast);
-end
-
-
-% plots only one group into one figure tile (one contrast)
-% this is half of one "tile"
-function plot_one_group(runno_list, legend_title, contrast, color, group_name, in_dir, cli_export)
-    for i=1:length(runno_list)
-        runno = runno_list{i};
-        % TODO: take this specific pattern matching OUT of a deep function
-        in_file = strcat(in_dir, '\', runno, '_', group_name, '_', contrast, '.report.', contrast, '.3.1.txt');
-        %in_file = strcat(in_dir, '\', runno, '.report.', contrast, '.3.1.txt');
-        % TODO: move this check into the extract values function and squash
-        % that into a single function
-        if cli_export
-            [x, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report_4row(in_file);
-        else
-            [x, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report(in_file);
-        end
-        if i==1
-            plot_one_profile(x, y, color, legend_title);
-        else
-            plot_one_profile(x, y, color);
-        end
-    end
 end
 
 % use this function if reports were manually exported fromdsi studio GUI
@@ -237,34 +196,3 @@ function [x, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_trac
     %y_CI_max = y_CI_max';
 end
 
-function plot_one_profile(x, y, color, legend_title)
-    if nargin < 4
-        legend_title=0;
-    end
-    value_format = strcat(color, '-');
-    if legend_title
-        % TODO: this does not work.
-        % want to (only sometimes) add legend key for a plot
-        % if I use the legend() function at the end it goes in order
-        % but I plot all ntg, and then all tg, so I can't properly label
-        % after the fact
-        % and if i use it multiple times, then it overwrites what was on
-        % there previously
-        %disp('ADDING A LEGEND');
-        plot(x,y,value_format, 'DisplayName', legend_title);
-    else
-        plot(x,y,value_format);
-    end
-end
-
-function plot_one_confidence_interval(x, y_CI_min, y_CI_max, color)
-    % concat upper and lower bounds CI into a 2xn column vector
-    % stolen from https://www.mathworks.com/help/matlab/creating_plots/line-plot-with-confidence-bounds.html
-    x_CI = [x x(end:-1:1)];
-    y_CI = [y_CI_min y_CI_max(end:-1:1)];
-    p = fill(x_CI,y_CI,color);
-    p.FaceAlpha = 0.1;
-    p.FaceColor = color;
-    %p.EdgeColor = 'none';
-    p.EdgeColor = color;
-end
