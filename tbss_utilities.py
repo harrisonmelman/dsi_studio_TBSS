@@ -29,7 +29,11 @@ def export_tract_profiles(fib_file, tract_file, out_dir, contrast_list=None, met
     out_prefix = "{}/{}".format(out_dir, runno)
 
     # add the group name if runno is template to differentiate between different group averages
+    # uses the name of the directory that the fib file is in as the group name
     if "template" in runno:
+        group_name = os.path.dirname(fib_file)
+        group_name = os.path.split(group_name)
+        group_name = group_name[1]
         out_prefix = "{}/{}_{}".format(out_dir, runno, group_name)
 
     # check if out_prefix[.*] is newer than the tract_file. If the reports are newer than the tract_file, then work is already done, and do not re-do
