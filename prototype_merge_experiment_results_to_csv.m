@@ -37,9 +37,11 @@ contrast_list = {'ad', 'fa', 'iso', 'md', 'qa', 'rd'};
 contrast_list = {'ad', 'fa'};
 project_code = '20.5xfad.01';
 identifier = 'BXD77';
+% TODO: a better way to handle setting age class
 ntg_runno_list = {'N59130NLSAM', 'N59132NLSAM', 'N60042NLSAM', 'N60141NLSAM', 'N60155NLSAM', 'N60165NLSAM', 'N60171NLSAM', 'N60206NLSAM', 'N60215NLSAM'};
+ntg_ages = {'geriatric', 'geriatric', 'adult', 'adult', 'geriatric', 'geriatric', 'geriatric', 'geriatric', 'geriatric'};
 tg_runno_list = {'N59128NLSAM', 'N59134NLSAM', 'N60044NLSAM', 'N60047NLSAM', 'N60076NLSAM', 'N60135NLSAM', 'N60143NLSAM', 'N60145NLSAM', 'N60147NLSAM', 'N60149NLSAM', 'N60151NLSAM', 'N60153NLSAM', 'N60208NLSAM', 'N60213NLSAM'};
-
+tg_ages = {'geriatric', 'geriatric', 'adult', 'adult', 'geriatric', 'adult', 'adult', 'geriatric', 'adult', 'geriatric', 'geriatric', 'geriatric', 'geriatric', 'geriatric'};
 in_dir_base = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\BADEA_vulnerable_networks_in_models_of_ad_risk';
 out_dir_base = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS';
 
@@ -52,16 +54,6 @@ out_dir_base = 'B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS';
     % bundles -- If it makes sense, subdivide the tractography generated
         % from the ROI into distinct bundles to analyze separately. This makes
         % sense if there are multiple branching bundles going through the ROI
-%% EXAMPLE for when you do not have any sub-bundles
-% experiment_list = {'hippo_right_cortex_left'};
-% experiment = 'hippo_right_cortex_left';
-% for i=1:length(experiment_list)
-%     experiment = experiment_list{i};
-%     in_dir = strcat('B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\BADEA_vulnerable_networks_in_models_of_ad_risk\', experiment);
-%     out_file = strcat('B:\ProjectSpace\hmm56\prototype_dsi_studio_TBSS\prototype_matlab_csv_export_', experiment, '.txt');
-%     [column_names, data_csv] = make_multicontrast_csv(out_file, ntg_runno_list, 'Ntg_all', tg_runno_list, 'tg_all', contrast_list, in_dir, cli_export);
-% end
-%% EXAMPLE with sub-bundles
 experiment_list = {'hippo_right_cortex_left', '159_optc_0.5'};
 experiment = 'hippo_right_cortex_left';
 for i=1:length(experiment_list)
@@ -71,19 +63,20 @@ for i=1:length(experiment_list)
     bundle_list = dir(strcat(in_dir_exp, '\', 'bundle*'));
     % TODO: only run this for loop IF we have at least one bundle
     % if no bundle folders detected, then fall back to the previous method
-    if length(bundle_list) > 0
+    % default value, for when a region is not subdivided
+    bundle = 0;
+    if ~ isempty(bundle_list)
         for j=1:length(bundle_list)
             bundle = bundle_list(j).name;
             in_dir = strcat(in_dir_exp, '\', bundle);
             % ex 20.5xfad.01_BXD77_172_scp_0.5_bundle1_TBSS_export.txt
             out_file = strcat(out_dir_base, '\', project_code, '_', identifier, '_', experiment, '_', bundle, '_TBSS_export.txt');
-            [column_names, data_csv] = make_multicontrast_csv(out_file, ntg_runno_list, 'Ntg_all', tg_runno_list, 'tg_all', contrast_list, in_dir, cli_export);
+            [column_names, data_csv] = make_multicontrast_csv(out_file, ntg_runno_list, 'Ntg_all', tg_runno_list, 'tg_all', contrast_list, in_dir, cli_export, experiment, bundle, ntg_ages, tg_ages);
         end
     else
         in_dir = in_dir_exp;
         out_file = strcat(out_dir_base, '\', project_code, '_', identifier, '_', experiment, '_TBSS_export.txt');
-        [column_names, data_csv] = make_multicontrast_csv(out_file, ntg_runno_list, 'Ntg_all', tg_runno_list, 'tg_all', contrast_list, in_dir, cli_export);
-        
+        [column_names, data_csv] = make_multicontrast_csv(out_file, ntg_runno_list, 'Ntg_all', tg_runno_list, 'tg_all', contrast_list, in_dir, cli_export, experiment, bundle, ntg_ages, tg_ages);
     end
 end
 %% functions
@@ -96,17 +89,19 @@ end
 % $runno_$contrast_CI_lower,
 % $runno_$contrast_CI_upper, 
 % group information (gene_status, age, sex, strain, etc)
-function [column_names, data_csv] = make_multicontrast_csv(out_file, group1, group1_name, group2, group2_name, contrast_list, in_dir, cli_export)
+function [column_names, data_csv] = make_multicontrast_csv(out_file, group1, group1_name, group2, group2_name, contrast_list, in_dir, cli_export, experiment, bundle, group1_ages, group2_ages)
     % estimate csv size for preallocation
     % 100 data points, plus columns for gene_status, runno, contrast
     % add more columns later for more refined groupings
-    num_cols = 104;
+    num_cols = 107;
     % TIMES 3 if you include the confidence intervals. keep off for test
     num_rows = 1 * (length(group1) + length(group2)) * length(contrast_list);
     % use a cell array to put both numerical and categorical data in
     data_csv = {};
     row_names = {};
-    column_names = {'name', 'runno', 'contrast', 'group'};
+    % TODO: make the 'metadata' columns into a dict? something that I pass
+    % to here to make this function take less arguments
+    column_names = {'name', 'runno', 'contrast', 'group', 'age_class', 'experiment', 'bundle'};
     % TODO: fix this so that you don't copy and paste the for loop twice
     % for 2 groups...
     custom_name = 'QSDR_QSDR';
@@ -114,16 +109,19 @@ function [column_names, data_csv] = make_multicontrast_csv(out_file, group1, gro
         contrast = contrast_list{i};
         group_name = group1_name;
         runno_list = group1;
+        age_list = group1_ages;
         for j=1:length(runno_list)
             runno = runno_list{j};
+            age_class = age_list{j};
             % TODO: make finding input files a function in itself
             % AND AND be more consistnet with naming tract profile files
             %in_file = strcat(in_dir, '\', runno, '_', group_name, '_', contrast, '.report.', contrast, '.3.1.txt');
             in_file = strcat(in_dir, '\', runno, '.report.', contrast, '.3.1.txt');
             [~, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report_4row(in_file);
             y = num2cell(y);
-            y = [in_file, runno, contrast, group_name, y];
+            %y = [in_file, runno, contrast, group_name, y];
             %y = [in_file, runno, contrast, group_name, custom_name, y];
+            y = [in_file, runno, contrast, group_name, age_class, experiment, bundle, y];
             % for testing, just the simple values
             %new_columns = {strcat(runno,'_',contrast,'_val'), strcat(runno,'_',contrast,'_CI_lower'), strcat(runno,'_',contrast,'_CI_upper')};
             new_rows = {strcat(runno,'_',contrast,'_val')};
@@ -133,13 +131,21 @@ function [column_names, data_csv] = make_multicontrast_csv(out_file, group1, gro
 
         group_name = group2_name;
         runno_list = group2;
+        age_list = group2_ages;
         for j=1:length(runno_list)
             runno = runno_list{j};
+            age_class = age_list{j};
             in_file = strcat(in_dir, '\', runno, '.report.', contrast, '.3.1.txt');
             [x, y, y_CI_min, y_CI_max] = extract_values_and_CI_from_dsi_studio_tract_profile_report_4row(in_file);
             y = num2cell(y);
-            y = [in_file, runno, contrast, group_name, y];
+            %y = [in_file, runno, contrast, group_name, y];
             %y = [in_file, runno, contrast, group_name, custom_name, y];
+            % add experiment and bundle identifications
+            % because I want to merge all these together into one giant
+            % spreadsheet to load into JMP. this will make me trivially
+            % swap between lots of different experiments to look at without
+            % having to change sheets and get so overwhelmed
+            y = [in_file, runno, contrast, group_name, age_class, experiment, bundle, y];
             new_rows = {strcat(runno,'_',contrast,'_val')};
             row_names = [row_names, new_rows];
             data_csv = [data_csv; y];
